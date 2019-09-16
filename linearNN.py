@@ -20,8 +20,10 @@ class NNet(nn.Module):
         self.drop_layer = nn.Dropout(p=p)
 
     def forward(self, x):
-        x = F.relu(self.lin1(x))
+        x = self.lin1(x)
+        x = F.relu(x)
         x = self.lin2(x)
+
         x = self.drop_layer(x)
 
         return x
@@ -32,8 +34,7 @@ EPOCHS = 100
 LEARNING_RATE = 0.001
 DROPOUT = 0.0
 
-T = transforms.Compose([transforms.ToTensor()])
-
+# use gpu 0 if cuda is available
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 net = NNet(p=DROPOUT)
@@ -42,6 +43,8 @@ net.to(device)
 optimizer = optim.SGD(net.parameters(), lr=LEARNING_RATE)
 
 lossfn = nn.CrossEntropyLoss()
+
+T = transforms.Compose([transforms.ToTensor()])
 
 train_data = datasets.MNIST('data', train=True, download=True, transform=T)
 train_loader = torch.utils.data.DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=False)
@@ -69,24 +72,30 @@ for epoch in range(EPOCHS):
         # move tensors to gpu if available
         inputs, labels = data[0].to(device), data[1].to(device)
 
-        # change input from (28, 28) to (28,)
+        # change input shape from (28, 28) to (28*28,)
         inputs = inputs.view(-1, 28*28)
 
+        # zero out the gradient
         optimizer.zero_grad()
 
         outputs = net(inputs)
 
+        # get the predictions for the batch and then check if they're equal to the labels
         prediction = outputs.data.max(1)[1]
         train_acc += prediction.eq(labels.data).sum().item()
 
         loss = lossfn(outputs, labels)
 
+        # back propogate
         loss.backward()
 
         train_loss += loss.item()
 
+        # update gradient values
         optimizer.step()
 
+    # len(train_loader) == number of batches (60_000 / BATCH_SIZE)
+    # len(train_loader.dataset) == 60_000
     train_loss /= len(train_loader)
     train_acc /= len(train_loader.dataset)
 
@@ -106,16 +115,18 @@ for epoch in range(EPOCHS):
         # move tensors to gpu if available
         inputs, labels = data[0].to(device), data[1].to(device)
 
-        # change input from (28, 28) to (28,)
+        # change input shape from (28, 28) to (28*28,)
         inputs = inputs.view(-1, 28*28)
 
         outputs = net(inputs)
 
+        # get the prediction for the image and then check if it's correct
         prediction = outputs.data.max(1)[1]
         test_acc += prediction.eq(labels.data).sum().item()
 
         test_loss += lossfn(outputs, labels).item()
 
+    # len(test_loader) == 10_000
     test_loss /= len(test_loader)
     test_acc /= len(test_loader)
 
@@ -124,10 +135,12 @@ for epoch in range(EPOCHS):
 
     print((f'\ttest_loss: {test_loss:.5f}\n\ttest_acc: {test_acc:.4f}\n'))
 
+# save good models
 if test_acc_vals[-1] > .90:
     model_name = f'1000hidden__{int(test_acc_vals[-1]*10000)}correct.model'
     torch.save(net.state_dict(), f'models/{model_name}')
 
+# if visdom server is running, save the matplotlib figure to it
 try:
     viz = Visdom()
 except:
