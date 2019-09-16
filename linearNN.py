@@ -50,7 +50,7 @@ train_data = datasets.MNIST('data', train=True, download=True, transform=T)
 train_loader = torch.utils.data.DataLoader(train_data, batch_size=BATCH_SIZE, shuffle=False)
 
 test_data = datasets.MNIST('data', train=False, download=True, transform=T)
-test_loader = torch.utils.data.DataLoader(test_data, shuffle=False)
+test_loader = torch.utils.data.DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=False)
 
 # values for graphing
 train_loss_vals = []
