@@ -1,6 +1,10 @@
-#include "Synapse.h"
+#include "Net.h"
 
-int main(int argc, const char** argv)
+#include <iostream>
+
+int main()
 {
+    Net net(28*28, 1000, 10);
+
     return 0;
 }

@@ -1,23 +1,25 @@
 CC := g++
-CFLAGS := -g -Wall -std=c++14
+CFLAGS := -g -Wall -std=c++14 -Wextra -MD -MP
 LIB :=
 INC :=
 
-SRCDIR := src
-BUILDDIR := build
+SRC_DIR := src
+BUILD_DIR := build
 
 TARGET := bin/mnist
  
-SRCEXT := cpp
-SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
-OBJECTS := $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
+SRC_EXT := cpp
+SRC := $(shell find $(SRC_DIR) -type f -name *.$(SRC_EXT))
+OBJ := $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(SRC:.$(SRC_EXT)=.o))
 
-$(TARGET): $(OBJECTS)
+$(TARGET): $(OBJ)
 	$(CC) $^ -o $(TARGET) $(LIB)
 
-$(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
-	mkdir -p $(BUILDDIR)
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.$(SRC_EXT)
+	mkdir -p $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(INC) -c -o $@ $<
 
 clean:
-	rm -r $(BUILDDIR) $(TARGET)
+	rm -r $(BUILD_DIR) $(TARGET)
+
+-include $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(SRC:.$(SRC_EXT)=.d))
