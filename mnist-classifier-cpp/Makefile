@@ -1,14 +1,15 @@
 CC := g++
 CFLAGS := -g -Wall -std=c++14 -Wextra -MD -MP
+SRC_EXT := cpp
+
+TARGET := bin/mnist
+ 
 LIB :=
 INC :=
 
 SRC_DIR := src
 BUILD_DIR := build
 
-TARGET := bin/mnist
- 
-SRC_EXT := cpp
 SRC := $(shell find $(SRC_DIR) -type f -name *.$(SRC_EXT))
 OBJ := $(patsubst $(SRC_DIR)/%,$(BUILD_DIR)/%,$(SRC:.$(SRC_EXT)=.o))
 
