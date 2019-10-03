@@ -6,11 +6,11 @@
 #include <sstream>
 #include <vector>
 
-template <typename T>
+template <typename T = double>
 class Matrix
 {
 public:
-    Matrix(int m, int n, T value=0) : m(m), n(n)
+    Matrix(int m, int n, T value = 0) : m(m), n(n)
     {
         matrix.resize(m, std::vector<T>(n, value));
     }

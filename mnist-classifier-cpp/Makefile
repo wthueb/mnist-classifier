@@ -1,7 +1,7 @@
 CC := g++
-CFLAGS := -g -Wall
+CFLAGS := -g -Wall -std=c++14
 LIB :=
-INC := -I include
+INC :=
 
 SRCDIR := src
 BUILDDIR := build

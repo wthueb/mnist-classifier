@@ -1,6 +1,8 @@
 #ifndef NET_H
 #define NET_H
 
+#include "Synapse.h"
+
 class Net
 {
     LinearConnection fc1(28*28, 1000);

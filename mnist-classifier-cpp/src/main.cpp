@@ -1,4 +1,4 @@
-#include "Matrix.h"
+#include "Synapse.h"
 
 int main(int argc, const char** argv)
 {

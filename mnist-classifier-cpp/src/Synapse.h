@@ -3,6 +3,8 @@
 
 #include <memory>
 
+#include "Neuron.h"
+
 class Synapse
 {
 public:
@@ -34,6 +36,6 @@ private:
     
     std::shared_ptr<Neuron> input;
     std::shared_ptr<Neuron> output;
-}
+};
 
 #endif // SYNAPSE_H
