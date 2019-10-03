@@ -1,5 +1,5 @@
-#ifndef Matrix_h
-#define Matrix_h
+#ifndef MATRIX_H
+#define MATRIX_H
 
 #include <iomanip>
 #include <iostream>
@@ -24,7 +24,7 @@ public:
             n = matrix[0].size();
             
             for (const auto& line : matrix)
-                assert(line.size() == n);
+                static_assert(line.size() == n);
         }
     }
     
@@ -40,7 +40,7 @@ public:
         
         void swap(MatrixRow&& other)
         {
-            assert(row.size() == other.row.size());
+            static_assert(row.size() == other.row.size());
             
             auto it = row.begin();
             auto it2 = other.row.begin();
@@ -65,7 +65,7 @@ public:
         
         void addMultipleRow(T multiple, MatrixRow&& other)
         {
-            assert(row.size() == other.row.size());
+            static_assert(row.size() == other.row.size());
             
             auto it = row.begin();
             auto it2 = other.row.begin();
@@ -90,7 +90,7 @@ public:
     
     Matrix<T> operator+(const Matrix<T>& other)
     {
-        assert(m == other.m && n == other.n);
+        static_assert(m == other.m && n == other.n);
         
         Matrix<T> ret(other);
         
@@ -112,7 +112,7 @@ public:
     
     Matrix<T> operator*(Matrix<T>& other)
     {
-        assert(n == other.m);
+        static_assert(n == other.m);
         
         Matrix<T> ret(m, other.n);
         
@@ -139,7 +139,7 @@ public:
     
     Matrix<T> concat(const Matrix<T>& other)
     {
-        assert(m == other.m);
+        static_assert(m == other.m);
         
         Matrix<T> ret(m, n + other.n);
         
@@ -201,5 +201,4 @@ private:
     int n;
 };
 
-
-#endif /* Matrix_h */
+#endif // Matrix_h
