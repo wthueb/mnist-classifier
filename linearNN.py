@@ -29,8 +29,8 @@ class NNet(nn.Module):
         return x
 
 
-BATCH_SIZE = 100
-EPOCHS = 100
+BATCH_SIZE = 1000
+EPOCHS = 10
 LEARNING_RATE = 0.001
 DROPOUT = 0.0
 
@@ -40,7 +40,8 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 net = NNet(p=DROPOUT)
 net.to(device)
 
-optimizer = optim.SGD(net.parameters(), lr=LEARNING_RATE)
+#optimizer = optim.SGD(net.parameters(), lr=LEARNING_RATE)
+optimizer = optim.Adam(net.parameters(), lr=LEARNING_RATE)
 
 lossfn = nn.CrossEntropyLoss()
 
@@ -53,19 +54,16 @@ test_data = datasets.MNIST('data', train=False, download=True, transform=T)
 test_loader = torch.utils.data.DataLoader(test_data, batch_size=BATCH_SIZE, shuffle=False)
 
 # values for graphing
-train_loss_vals = []
-train_acc_vals = []
-test_loss_vals = []
-test_acc_vals = []
+train_loss = []
+train_acc = []
+test_loss = []
+test_acc = []
 
 for epoch in range(EPOCHS):
     print(f'epoch: {epoch+1}/{EPOCHS}')
 
     # training
     net.train()
-
-    train_loss = 0
-    train_acc = 0
 
     # tqdm for progress bar
     for data in tqdm(train_loader, desc='training'):
@@ -82,33 +80,25 @@ for epoch in range(EPOCHS):
 
         # get the predictions for the batch and then check if they're equal to the labels
         prediction = outputs.data.max(1)[1]
-        train_acc += prediction.eq(labels.data).sum().item()
+
+        # get value for graphing
+        train_acc.append(prediction.eq(labels.data).sum().item() / BATCH_SIZE)
 
         loss = lossfn(outputs, labels)
 
         # back propogate
         loss.backward()
 
-        train_loss += loss.item()
+        # get value for graphing
+        train_loss.append(loss.item())
 
         # update gradient values
         optimizer.step()
 
-    # len(train_loader) == number of batches (60_000 / BATCH_SIZE)
-    # len(train_loader.dataset) == 60_000
-    train_loss /= len(train_loader)
-    train_acc /= len(train_loader.dataset)
-
-    train_loss_vals.append(train_loss)
-    train_acc_vals.append(train_acc)
-
-    print(f'\ttrain_loss: {train_loss:.5f}\n\ttrain_acc: {train_acc:.4f}')
+    print(f'\ttrain_loss: {train_loss[-1]:.5f}\n\ttrain_acc: {train_acc[-1]:.4f}')
 
     # testing
     net.eval()
-
-    test_loss = 0
-    test_acc = 0
 
     # tqdm for progress bar
     for data in tqdm(test_loader, desc='testing'):
@@ -122,23 +112,18 @@ for epoch in range(EPOCHS):
 
         # get the prediction for the image and then check if it's correct
         prediction = outputs.data.max(1)[1]
-        test_acc += prediction.eq(labels.data).sum().item()
+        
+        # get values for graphing
+        test_acc.append(prediction.eq(labels.data).sum().item() / BATCH_SIZE)
+        test_loss.append(lossfn(outputs, labels).item())
 
-        test_loss += lossfn(outputs, labels).item()
+    print((f'\ttest_loss: {test_loss[-1]:.5f}\n\ttest_acc: {test_acc[-1]:.4f}\n'))
 
-    # len(test_loader) == 10_000
-    test_loss /= len(test_loader)
-    test_acc /= len(test_loader)
-
-    test_loss_vals.append(test_loss)
-    test_acc_vals.append(test_acc)
-
-    print((f'\ttest_loss: {test_loss:.5f}\n\ttest_acc: {test_acc:.4f}\n'))
+model_name = f'1000hidden__{int(test_acc[-1]*10000)}correct'
 
 # save good models
-if test_acc_vals[-1] > .90:
-    model_name = f'1000hidden__{int(test_acc_vals[-1]*10000)}correct.model'
-    torch.save(net.state_dict(), f'models/{model_name}')
+if test_acc[-1] > .90:
+    torch.save(net.state_dict(), f'models/{model_name}.model')
 
 # if visdom server is running, save the matplotlib figure to it
 try:
@@ -152,7 +137,7 @@ loss_plt = fig.add_subplot(121)
 acc_plt = fig.add_subplot(122)
 
 fig.suptitle((f'lr={LEARNING_RATE}, batch_size={BATCH_SIZE}, epochs={EPOCHS}, p={DROPOUT}\n'
-              f'final accuracy: {test_acc_vals[-1]:.4f}'))
+              f'final accuracy: {test_acc[-1]:.4f}'))
 
 loss_plt.set_xlabel('epoch')
 acc_plt.set_xlabel('epoch')
@@ -160,17 +145,20 @@ acc_plt.set_xlabel('epoch')
 loss_plt.set_ylabel('loss')
 acc_plt.set_ylabel('accuracy')
 
-loss_plt.set_xlim(0, EPOCHS + 1)
-acc_plt.set_xlim(0, EPOCHS + 1)
+loss_plt.set_xlim(0, EPOCHS)
+acc_plt.set_xlim(0, EPOCHS)
 
-loss_plt.set_ylim(0, max(train_loss_vals + test_loss_vals) + .1)
+loss_plt.set_ylim(0, max(max(train_loss), max(test_loss)) + .1)
 acc_plt.set_ylim(0, 1)
 
-loss_plt.plot(range(1, EPOCHS + 1), train_loss_vals, color='b', label='train loss', linewidth=1)
-loss_plt.plot(range(1, EPOCHS + 1), test_loss_vals, color='g', label='test loss', linewidth=1)
+x_train = np.arange(0, EPOCHS, 1 / len(train_loader))
+x_test = np.arange(0, EPOCHS, 1 / len(test_loader))
 
-acc_plt.plot(range(1, EPOCHS + 1), train_acc_vals, color='b', label='train accuracy', linewidth=1)
-acc_plt.plot(range(1, EPOCHS + 1), test_acc_vals, color='g', label='test accuracy', linewidth=1)
+loss_plt.plot(x_train, train_loss, color='b', label='train loss', linewidth=1)
+loss_plt.plot(x_test, test_loss, color='g', label='test loss', linewidth=1)
+
+acc_plt.plot(x_train, train_acc, color='b', label='train accuracy', linewidth=1)
+acc_plt.plot(x_test, test_acc, color='g', label='test accuracy', linewidth=1)
 
 loss_plt.legend()
 acc_plt.legend()
@@ -180,5 +168,7 @@ acc_plt.grid()
 
 if viz:
     viz.matplot(plt)
+
+plt.savefig(f'figs/{model_name}.png')
 
 plt.show()
